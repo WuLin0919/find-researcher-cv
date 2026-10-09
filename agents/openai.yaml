@@ -1,0 +1,3 @@
+interface:
+  display_name: "寻找研究者简历"
+  short_description: "核验科研人员公开资料并生成可追溯的中文一页学术简历PDF文件"

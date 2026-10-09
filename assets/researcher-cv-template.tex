@@ -1,0 +1,50 @@
+\documentclass[UTF8,a4paper,10pt,fontset=fandol]{ctexart}
+\usepackage[left=1.35cm,right=1.35cm,top=1.15cm,bottom=1.05cm]{geometry}
+\usepackage{graphicx}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage[hidelinks]{hyperref}
+\usepackage{xcolor}
+\usepackage{ragged2e}
+
+\definecolor{CVGreen}{HTML}{245B4A}
+\definecolor{CVLine}{HTML}{9FB5AA}
+\definecolor{CVGray}{HTML}{5E6A65}
+\definecolor{DOIBlue}{HTML}{1A5FB4}
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0pt}
+\setlength{\columnsep}{0.7cm}
+\setlist{nosep,leftmargin=1.45em,labelsep=0.45em}
+\renewcommand{\tabularxcolumn}[1]{>{\RaggedRight\arraybackslash}m{#1}}
+\newcommand{\CVSection}[1]{%
+  \par\addvspace{0.78em}%
+  {\color{CVGreen}\bfseries\large #1}\par
+  \vspace{0.12em}{\color{CVLine}\rule{\linewidth}{0.45pt}}\vspace{0.18em}%
+}
+\newcommand{\CVEntry}[2]{%
+  {\renewcommand{\arraystretch}{0.82}%
+  \begin{tabularx}{\linewidth}{@{}>{\RaggedRight\arraybackslash\bfseries\color{CVGreen}}m{2.4cm}@{}X@{}}
+  #1 & #2
+  \end{tabularx}}\par
+  \vspace{0em}{\color{CVLine}\rule{\linewidth}{0.25pt}}\vspace{0.03em}%
+}
+
+\begin{document}
+\small
+@@HEADER@@
+
+@@RESEARCH_INTERESTS@@
+
+\noindent\begin{minipage}[t]{0.485\textwidth}
+@@LEFT_COLUMN@@
+\end{minipage}\hfill
+\begin{minipage}[t]{0.485\textwidth}
+@@RIGHT_COLUMN@@
+\end{minipage}
+
+@@PUBLICATIONS@@
+
+@@FOOTER@@
+\end{document}
