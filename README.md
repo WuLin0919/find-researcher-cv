@@ -22,18 +22,16 @@ A Codex Skill that verifies a researcher from their name and institution, select
 
 ## Install
 
-Replace `YOUR_USERNAME` with your GitHub username.
-
 ### Windows PowerShell
 
 ```powershell
-git clone https://github.com/YOUR_USERNAME/find-researcher-cv.git "$env:USERPROFILE\.codex\skills\find-researcher-cv"
+git clone https://github.com/WuLin0919/find-researcher-cv.git "$env:USERPROFILE\.codex\skills\find-researcher-cv"
 ```
 
 ### macOS or Linux
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/find-researcher-cv.git ~/.codex/skills/find-researcher-cv
+git clone https://github.com/WuLin0919/find-researcher-cv.git ~/.codex/skills/find-researcher-cv
 ```
 
 Start a new Codex conversation after installation.
