@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import argparse
 import copy
+import os
+import re
 import shutil
 import subprocess
 from pathlib import Path
@@ -17,6 +19,8 @@ SOURCE_LABELS = {
     "openalex": "OpenAlex",
     "crossref": "Crossref",
 }
+
+WINDOWS_INVALID_FILENAME_CHARS = re.compile(r'[<>:"/\\|?*\x00-\x1f]')
 
 
 def latex_escape(value: object) -> str:
@@ -34,6 +38,91 @@ def latex_escape(value: object) -> str:
         "^": r"\textasciicircum{}",
     }
     return "".join(replacements.get(character, character) for character in text)
+
+
+def safe_filename_component(value: object) -> str:
+    """Return a readable cross-platform filename component."""
+    component = re.sub(r"\s+", " ", clean_text(value)).strip(" .")
+    component = WINDOWS_INVALID_FILENAME_CHARS.sub("-", component).strip(" .")
+    if not component:
+        raise ValueError("Researcher name and institution must not be empty")
+    return component
+
+
+def delivery_basename(profile: dict[str, Any]) -> str:
+    identity = profile.get("identity", {})
+    if not isinstance(identity, dict):
+        raise ValueError("Profile identity must be an object")
+    name = identity.get("name_original") or identity.get("name_zh")
+    institution = identity.get("institution")
+    return (
+        safe_filename_component(name)
+        + "_"
+        + safe_filename_component(institution)
+    )
+
+
+def default_desktop_dir() -> Path:
+    """Resolve the user's Desktop, including a Windows redirected Desktop."""
+    if os.name == "nt":
+        try:
+            import ctypes
+
+            buffer = ctypes.create_unicode_buffer(260)
+            result = ctypes.windll.shell32.SHGetFolderPathW(
+                None, 0x10, None, 0, buffer
+            )
+            if result == 0 and buffer.value:
+                return Path(buffer.value)
+        except (AttributeError, OSError):
+            pass
+    return Path.home() / "Desktop"
+
+
+def publish_final_pair(
+    profile: dict[str, Any],
+    tex_path: Path,
+    pdf_path: Path,
+    desktop_dir: Path,
+) -> tuple[Path, Path]:
+    """Publish exactly one renamed TeX/PDF pair into a Desktop folder."""
+    basename = delivery_basename(profile)
+    target_dir = desktop_dir.expanduser() / basename
+    expected_names = {f"{basename}.tex", f"{basename}.pdf"}
+
+    if target_dir.exists() and not target_dir.is_dir():
+        raise FileExistsError(
+            f"Desktop delivery path exists but is not a folder: {target_dir}"
+        )
+    target_dir.mkdir(parents=True, exist_ok=True)
+
+    existing = {path.name for path in target_dir.iterdir()}
+    unexpected = sorted(existing - expected_names)
+    if unexpected:
+        raise FileExistsError(
+            "Refusing to replace Desktop delivery folder because it contains "
+            f"unexpected files: {', '.join(unexpected)}"
+        )
+    non_files = sorted(
+        path.name for path in target_dir.iterdir() if not path.is_file()
+    )
+    if non_files:
+        raise FileExistsError(
+            "Refusing to replace Desktop delivery folder because expected output "
+            f"paths are not files: {', '.join(non_files)}"
+        )
+
+    delivered_tex = target_dir / f"{basename}.tex"
+    delivered_pdf = target_dir / f"{basename}.pdf"
+    shutil.copy2(tex_path, delivered_tex)
+    shutil.copy2(pdf_path, delivered_pdf)
+
+    delivered_names = {path.name for path in target_dir.iterdir()}
+    if delivered_names != expected_names:
+        raise RuntimeError(
+            f"Desktop delivery folder must contain exactly: {sorted(expected_names)}"
+        )
+    return delivered_tex, delivered_pdf
 
 
 def render_doi_link(value: object) -> str:
@@ -453,6 +542,12 @@ def main() -> int:
     parser.add_argument("--publications", required=True, type=Path)
     parser.add_argument("--template", required=True, type=Path)
     parser.add_argument("--output-dir", required=True, type=Path)
+    parser.add_argument(
+        "--desktop-dir",
+        type=Path,
+        default=None,
+        help="Desktop root for the final two-file delivery folder.",
+    )
     args = parser.parse_args()
 
     profile = read_json(args.profile)
@@ -466,7 +561,8 @@ def main() -> int:
     render_profile = copy.deepcopy(profile)
     stage_portrait(args.profile, output_dir, render_profile)
 
-    tex_path = output_dir / "researcher_cv.tex"
+    basename = delivery_basename(profile)
+    tex_path = output_dir / f"{basename}.tex"
     tex_path.write_text(
         render_cv(render_profile, publications, args.template),
         encoding="utf-8",
@@ -479,7 +575,7 @@ def main() -> int:
     return_code = compile_tex(tex_path, log_path)
     if return_code != 0:
         return return_code
-    pdf_path = output_dir / "researcher_cv.pdf"
+    pdf_path = output_dir / f"{basename}.pdf"
     pages = pdf_page_count(pdf_path)
     if pages != 1:
         with log_path.open("a", encoding="utf-8") as handle:
@@ -491,6 +587,12 @@ def main() -> int:
         publications,
         page_count=pages,
     )
+    desktop_dir = args.desktop_dir or default_desktop_dir()
+    delivered_tex, delivered_pdf = publish_final_pair(
+        profile, tex_path, pdf_path, desktop_dir
+    )
+    print(f"Delivered TeX: {delivered_tex}")
+    print(f"Delivered PDF: {delivered_pdf}")
     return 0
 
 

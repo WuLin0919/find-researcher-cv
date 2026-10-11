@@ -117,14 +117,35 @@ Run from the Skill directory or use absolute paths:
 python scripts/render_cv.py --profile normalized_profile.json --publications selected_publications.json --template assets/researcher-cv-template.tex --output-dir output
 ```
 
-The command must produce:
+The command must use `identity.name_original` (falling back to `identity.name_zh`) and
+`identity.institution` to build the filename `<researcher name>_<institution>`. Characters
+that are illegal in Windows filenames are replaced with `-`.
 
-- `researcher_cv.tex`;
-- `researcher_cv.pdf`;
+The working output directory must preserve:
+
+- `<researcher name>_<institution>.tex`;
+- `<researcher name>_<institution>.pdf`;
 - `sources.md`;
 - `verification_report.md`;
 - `compilation.log`;
 - a local `portrait.*` only when an official portrait is available.
+
+After compilation and the one-page check succeed, publish a same-named folder on the
+user's Desktop:
+
+```text
+Desktop/
+└── <researcher name>_<institution>/
+    ├── <researcher name>_<institution>.tex
+    └── <researcher name>_<institution>.pdf
+```
+
+That Desktop folder must contain exactly those two files and no auxiliary files. Never
+copy `sources.md`, `verification_report.md`, `compilation.log`, portrait files, or LaTeX
+auxiliary files into it. Existing same-named TeX/PDF files may be overwritten. If the
+same-named Desktop folder contains any other file, stop and report the conflict rather
+than deleting user data. Use `--desktop-dir PATH` only when the user explicitly requests
+another Desktop root or when testing the delivery step.
 
 The renderer exits nonzero if XeLaTeX fails or the PDF is not exactly one page. If it
 overflows, apply the documented compression order and rerun. Do not shrink text below a
@@ -149,7 +170,7 @@ Render the PDF page to an image and inspect it for:
 - blue DOI text whose PDF link target resolves through `https://doi.org/`;
 - source families and verification date in the footer.
 
-Report the exact output paths and all remaining limitations.
+Report the exact two Desktop delivery paths and all remaining limitations.
 
 ## Non-negotiable rules
 

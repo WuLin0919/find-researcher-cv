@@ -10,6 +10,8 @@ A Codex Skill that verifies a researcher from their name and institution, select
 - Selects five verified formal publications by time-stamped OpenAlex citation count.
 - Uses an official portrait when available and otherwise renders a no-photo layout.
 - Generates a one-page PDF with blue clickable DOI links.
+- Delivers a Desktop folder named `<researcher name>_<institution>` containing only the
+  equivalently named `.tex` and `.pdf` files.
 
 ## Requirements
 
@@ -35,6 +37,22 @@ git clone https://github.com/YOUR_USERNAME/find-researcher-cv.git ~/.codex/skill
 ```
 
 Start a new Codex conversation after installation.
+
+## Output
+
+The renderer keeps evidence, verification, compilation logs, and other support files in
+its working output directory. After a successful one-page build, it creates this clean
+delivery on the user's Desktop:
+
+```text
+<researcher name>_<institution>/
+├── <researcher name>_<institution>.tex
+└── <researcher name>_<institution>.pdf
+```
+
+Windows-illegal filename characters are replaced with `-`. The delivery folder never
+contains logs, portraits, source notes, or LaTeX auxiliary files. For tests or a custom
+Desktop root, pass `--desktop-dir PATH` to `scripts/render_cv.py`.
 
 ## Example request
 
